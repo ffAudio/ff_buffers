@@ -51,6 +51,7 @@ public:
         jassert (delay < buffer.getNumSamples());
         const int assumedRead = writePosition - delay;
         readPosition = (assumedRead < 0) ? assumedRead + buffer.getNumSamples() : assumedRead;
+        reset();
 
         updateActualSampleDelay();
     }
@@ -67,6 +68,12 @@ public:
     void updateActualSampleDelay ()
     {
         numDelaySamples = (writePosition < readPosition) ? writePosition + buffer.getNumSamples() - readPosition : writePosition - readPosition;
+    }
+
+    void reset ()
+    {
+        for (auto* r : resamplers)
+            r->reset();
     }
 
     void pushBlock (const juce::AudioBuffer<SampleType>& inputBuffer, const int numSamples, const SampleType gain = 1.0f)
