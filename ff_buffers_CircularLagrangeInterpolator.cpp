@@ -53,8 +53,26 @@ namespace
     {
         if (actualRatio == 1.0)
         {
-            memcpy (out, in, (size_t) numOut * sizeof (float));
-            pushInterpolationSamples (lastInputSamples, in, numOut);
+            if (available >= numOut)
+            {
+                memcpy (out, in, (size_t) numOut * sizeof (float));
+                pushInterpolationSamples (lastInputSamples, in, numOut);
+            }
+            else
+            {
+                memcpy (out, in, (size_t) available * sizeof (float));
+                pushInterpolationSamples (lastInputSamples, in, numOut);
+                if (rewind > 0)
+                {
+                    memcpy (out + available, in - rewind, (size_t) (numOut - available) * sizeof (float));
+                    pushInterpolationSamples (lastInputSamples, in, numOut);
+                }
+                else
+                {
+                    for (int i=0; i < numOut-available; ++i)
+                        pushInterpolationSample (lastInputSamples, 0.0);
+                }
+            }
             return numOut;
         }
 
