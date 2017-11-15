@@ -33,7 +33,7 @@ namespace
         lastInputSamples[0] = newValue;
     }
 
-    static forcedinline void pushInterpolationSamples (float* lastInputSamples, const float* input, int numOut) noexcept
+    static forcedinline void pushInterpolationSamples (float* lastInputSamples, const float* input, int numOut, int available=std::numeric_limits<int>::max(), const int rewind=0) noexcept
     {
         if (numOut >= 5)
         {
@@ -42,8 +42,27 @@ namespace
         }
         else
         {
-            for (int i = 0; i < numOut; ++i)
-                pushInterpolationSample (lastInputSamples, input[i]);
+            if (numOut > available) {
+                for (int i = 0; i < available; ++i)
+                    pushInterpolationSample (lastInputSamples, input[i]);
+
+                if (rewind > 0) {
+                    for (int i = 0; i < numOut-available; ++i) {
+                        pushInterpolationSample (lastInputSamples, input[i+available-rewind]);
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < numOut-available; ++i) {
+                        pushInterpolationSample (lastInputSamples, 0.0);
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < numOut; ++i)
+                    pushInterpolationSample (lastInputSamples, input[i]);
+            }
         }
     }
 
@@ -56,16 +75,16 @@ namespace
             if (available >= numOut)
             {
                 memcpy (out, in, (size_t) numOut * sizeof (float));
-                pushInterpolationSamples (lastInputSamples, in, numOut);
+                pushInterpolationSamples (lastInputSamples, in, numOut, available, rewind);
             }
             else
             {
                 memcpy (out, in, (size_t) available * sizeof (float));
-                pushInterpolationSamples (lastInputSamples, in, numOut);
+                pushInterpolationSamples (lastInputSamples, in, numOut, available, rewind);
                 if (rewind > 0)
                 {
                     memcpy (out + available, in - rewind, (size_t) (numOut - available) * sizeof (float));
-                    pushInterpolationSamples (lastInputSamples, in, numOut);
+                    pushInterpolationSamples (lastInputSamples, in, numOut, available, rewind);
                 }
                 else
                 {
@@ -157,8 +176,26 @@ namespace
     {
         if (actualRatio == 1.0)
         {
-            FloatVectorOperations::addWithMultiply (out, in, gain, numOut);
-            pushInterpolationSamples (lastInputSamples, in, numOut);
+            if (available >= numOut)
+            {
+                FloatVectorOperations::addWithMultiply (out, in, gain, numOut);
+                pushInterpolationSamples (lastInputSamples, in, numOut, available, rewind);
+            }
+            else
+            {
+                FloatVectorOperations::addWithMultiply (out, in, gain, available);
+                pushInterpolationSamples (lastInputSamples, in, available, available, rewind);
+                if (rewind > 0)
+                {
+                    FloatVectorOperations::addWithMultiply (out, in - rewind, gain, numOut - available);
+                    pushInterpolationSamples (lastInputSamples, in - rewind, numOut - available, available, rewind);
+                }
+                else
+                {
+                    for (int i=0; i < numOut-available; ++i)
+                        pushInterpolationSample (lastInputSamples, 0.0);
+                }
+            }
             return numOut;
         }
 
