@@ -83,7 +83,7 @@ namespace
                 pushInterpolationSamples (lastInputSamples, in, numOut, available, rewind);
                 if (rewind > 0)
                 {
-                    memcpy (out + available, in - rewind, (size_t) (numOut - available) * sizeof (float));
+                    memcpy (out + available, in + available - rewind, (size_t) (numOut - available) * sizeof (float));
                     pushInterpolationSamples (lastInputSamples, in, numOut, available, rewind);
                 }
                 else
