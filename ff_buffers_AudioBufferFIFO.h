@@ -116,6 +116,27 @@ public:
         finishedRead (size1 + size2);
     }
 
+    /*< Read samples from the FIFO and add it to raw float arrays */
+    void readFromFifoAdding (FloatType** samples, int numSamples, FloatType gain=1)
+    {
+        jassert (getNumReady() >= numSamples);
+        int start1, size1, start2, size2;
+        prepareToRead (numSamples, start1, size1, start2, size2);
+        if (size1 > 0)
+            for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+                juce::FloatVectorOperations::addWithMultiply (samples [channel],
+                                                              buffer.getReadPointer (channel, start1),
+                                                              gain,
+                                                              size1);
+        if (size2 > 0)
+            for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+                juce::FloatVectorOperations::addWithMultiply (samples [channel] + size1,
+                                                              buffer.getReadPointer (channel, start2),
+                                                              gain,
+                                                              size2);
+        finishedRead (size1 + size2);
+    }
+
     /*< Read samples from the FIFO into AudioBuffers */
     void readFromFifo (juce::AudioBuffer<FloatType>& samples, int numSamples=-1)
     {
@@ -133,6 +154,23 @@ public:
         finishedRead (size1 + size2);
     }
 
+    /*< Read samples from the FIFO adding it to the AudioBuffers */
+    void readFromFifoAdding (juce::AudioBuffer<FloatType>& samples, int numSamples=-1, FloatType gain=1)
+    {
+        const int readSamples = numSamples > 0 ? numSamples : samples.getNumSamples();
+        jassert (getNumReady() >= readSamples);
+
+        int start1, size1, start2, size2;
+        prepareToRead (readSamples, start1, size1, start2, size2);
+        if (size1 > 0)
+            for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+                samples.addFrom (channel, 0, buffer.getReadPointer (channel, start1), size1, gain);
+        if (size2 > 0)
+            for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+                samples.addFrom (channel, size1, buffer.getReadPointer (channel, start2), size2, gain);
+        finishedRead (size1 + size2);
+    }
+
     /*< Read samples from the FIFO into AudioSourceChannelInfo buffers to be used in AudioSources getNextAudioBlock */
     void readFromFifo (const juce::AudioSourceChannelInfo& info, int numSamples=-1)
     {
@@ -147,6 +185,23 @@ public:
         if (size2 > 0)
             for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
                 info.buffer->copyFrom (channel, info.startSample + size1, buffer.getReadPointer (channel, start2), size2);
+        finishedRead (size1 + size2);
+    }
+
+    /*< Read samples from the FIFO into AudioSourceChannelInfo buffers to be used in AudioSources getNextAudioBlock */
+    void readFromFifoAdding (const juce::AudioSourceChannelInfo& info, int numSamples=-1, FloatType gain=1)
+    {
+        const int readSamples = numSamples > 0 ? numSamples : info.numSamples;
+        jassert (getNumReady() >= readSamples);
+
+        int start1, size1, start2, size2;
+        prepareToRead (readSamples, start1, size1, start2, size2);
+        if (size1 > 0)
+            for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+                info.buffer->addFrom (channel, info.startSample, buffer.getReadPointer (channel, start1), size1, gain);
+        if (size2 > 0)
+            for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+                info.buffer->addFrom (channel, info.startSample + size1, buffer.getReadPointer (channel, start2), size2, gain);
         finishedRead (size1 + size2);
     }
 
