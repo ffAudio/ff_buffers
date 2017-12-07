@@ -49,7 +49,6 @@
 
 
 #include "ff_buffers_AudioBufferFIFO.h"
-#include "ff_buffers_CircularLagrangeInterpolator.h"
 #include "ff_buffers_ElasticDelayBuffer.h"
 
 

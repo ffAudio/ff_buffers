@@ -3,7 +3,7 @@
 
     ElasticDelayBuffer.h
     Created: 30 Jul 2017 12:56:50am
-    Author:  Dobby
+    Author:  Daniel Walz
 
   ==============================================================================
 */
@@ -14,7 +14,7 @@ template <typename SampleType>
 class ElasticDelayBuffer {
     juce::AudioBuffer<SampleType>           buffer;
 
-    juce::OwnedArray<CircularLagrangeInterpolator> resamplers;
+    juce::OwnedArray<juce::LagrangeInterpolator> resamplers;
 
     int writePosition = 0;
     int readPosition  = 0;
@@ -32,7 +32,7 @@ public:
     {
         buffer.setSize (numChannels, numSamples, false, true);
         while (resamplers.size() < numChannels) {
-            resamplers.add (new CircularLagrangeInterpolator());
+            resamplers.add (new juce::LagrangeInterpolator());
         }
         while (resamplers.size() > numChannels) {
             resamplers.removeLast();
